@@ -43,7 +43,9 @@ jobs:
           cd build
           qmake ../scrite.pro CONFIG+=release
           make -j"$(nproc)"
-          test -x "${GITHUB_WORKSPACE}/../Release/Scrite"
+          SCRITE_BINARY_PATH="${GITHUB_WORKSPACE}/../Release/Scrite"
+          test -x "${SCRITE_BINARY_PATH}"
+          echo "SCRITE_BINARY_PATH=${SCRITE_BINARY_PATH}" | tee -a "${GITHUB_ENV}"
 
       - name: Download linuxdeployqt helper
         run: |
@@ -55,6 +57,7 @@ jobs:
         run: |
           set -euxo pipefail
           export VERSION="${SCRITE_VERSION}"
+          export SCRITE_BINARY_PATH="${SCRITE_BINARY_PATH}"
           export APPIMAGE_EXTRACT_AND_RUN=1
           cd packaging/linux
           chmod +x ./package.sh

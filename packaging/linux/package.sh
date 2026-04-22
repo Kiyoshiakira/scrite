@@ -3,15 +3,16 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-VERSION="${VERSION:-$(sed -n 's/^VERSION[[:space:]]*=[[:space:]]*//p' "${REPO_ROOT}/scrite.pro" | head -n 1)}"
+VERSION="${VERSION:-$(awk -F'=' '/^VERSION[[:space:]]*=/{gsub(/[[:space:]]/, "", $2); print $2; exit}' "${REPO_ROOT}/scrite.pro")}"
 APPDIR_NAME="Scrite-${VERSION}.AppImage"
 APPDIR_PATH="${SCRIPT_DIR}/${APPDIR_NAME}"
 LINUXDEPLOYQT_BIN="${LINUXDEPLOYQT:-${HOME}/linuxdeployqt}"
+SCRITE_BINARY_PATH="${SCRITE_BINARY_PATH:-${REPO_ROOT}/../Release/Scrite}"
 
 rm -rf "${APPDIR_PATH}"
 mkdir -p "${APPDIR_PATH}/bin" "${APPDIR_PATH}/lib"
 
-cp "${REPO_ROOT}/../Release/Scrite" "${APPDIR_PATH}/bin/"
+cp "${SCRITE_BINARY_PATH}" "${APPDIR_PATH}/bin/"
 cp /usr/lib/x86_64-linux-gnu/libssl.so.1.1 "${APPDIR_PATH}/lib"
 cp /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 "${APPDIR_PATH}/lib"
 cp -L /usr/lib/x86_64-linux-gnu/libibus-1.0.so "${APPDIR_PATH}/lib"
