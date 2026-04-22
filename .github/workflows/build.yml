@@ -1,34 +1,41 @@
 name: Build Scrite Linux
+
 on:
-  workflow_dispatch: # Allows you to click a button to start the build
+  workflow_dispatch:
 
 jobs:
   build-linux:
     runs-on: ubuntu-22.04
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Install Qt and Build Essentials
-            - name: Verify ibus dev package
         run: |
-          dpkg -l | grep -E 'libibus|ibus' || true
-          pkg-config --modversion ibus-1.0 || (echo "pkg-config can't find ibus-1.0" && exit 1)
-          pkg-config --cflags --libs ibus-1.0
-        run: |
+          set -euxo pipefail
           sudo apt-get update
-          sudo apt-get install -y \
+          sudo apt-get install -y --no-install-recommends \
             build-essential pkg-config \
             qtbase5-dev qtdeclarative5-dev \
             qt5-qmake qtbase5-dev-tools \
             libhunspell-dev libssl-dev imagemagick \
             libibus-1.0-dev
 
+      - name: Verify ibus dev package
+        run: |
+          set -euxo pipefail
+          dpkg -l | grep -E 'libibus|ibus' || true
+          pkg-config --modversion ibus-1.0
+          pkg-config --cflags --libs ibus-1.0
+
       - name: Configure and Build
         run: |
-          mkdir build && cd build
+          set -euxo pipefail
+          mkdir -p build
+          cd build
           qmake ../scrite.pro
-          make -j$(nproc)
+          make -j"$(nproc)"
 
       - name: Upload Scrite Binary
         uses: actions/upload-artifact@v4
