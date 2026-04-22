@@ -31,36 +31,40 @@ jobs:
         run: |
           set -euxo pipefail
           python3 - <<'PY'
-          import pathlib, re
+import pathlib
+import re
 
-          # Remove the token 'pdf' from any "QT +=" lines in *.pro/*.pri.
-          # This modifies the CI workspace only; it does not commit anything back.
-          patterns = ["*.pro", "*.pri"]
-          files = []
-          for pat in patterns:
-            files += list(pathlib.Path(".").rglob(pat))
+# Remove the token 'pdf' from any "QT +=" lines in *.pro/*.pri.
+# This modifies the CI workspace only; it does not commit anything back.
 
-          qt_re = re.compile(r"^\s*QT\s*\+=\s*(.*)$")
+files = []
+for pat in ("*.pro", "*.pri"):
+    files.extend(pathlib.Path(".").rglob(pat))
 
-          for p in files:
-            txt = p.read_text(encoding="utf-8", errors="ignore").splitlines(True)
-            changed = False
-            out = []
-            for line in txt:
-              m = qt_re.match(line)
-              if m and "pdf" in line and not line.lstrip().startswith("#"):
-                # Tokenize modules portion, drop 'pdf'
-                before, modules = line.split("+=", 1)
-                tokens = modules.strip().split()
-                tokens = [t for t in tokens if t != "pdf"]
-                newline = before + "+= " + " ".join(tokens) + "\n"
-                out.append(newline)
-                changed = True
-              else:
-                out.append(line)
-            if changed:
-              p.write_text("".join(out), encoding="utf-8")
-              print(f"Patched: {p}")
+qt_re = re.compile(r"^\s*QT\s*\+=\s*(.*)$")
+
+for p in files:
+    lines = p.read_text(encoding="utf-8", errors="ignore").splitlines(True)
+    changed = False
+    out = []
+    for line in lines:
+        if line.lstrip().startswith("#"):
+            out.append(line)
+            continue
+
+        m = qt_re.match(line)
+        if m and "pdf" in line:
+            before, modules = line.split("+=", 1)
+            tokens = modules.strip().split()
+            tokens = [t for t in tokens if t != "pdf"]
+            out.append(before + "+= " + " ".join(tokens) + "\n")
+            changed = True
+        else:
+            out.append(line)
+
+    if changed:
+        p.write_text("".join(out), encoding="utf-8")
+        print(f"Patched: {p}")
           PY
 
       - name: Configure and Build
