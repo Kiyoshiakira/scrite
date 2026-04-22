@@ -103,8 +103,8 @@ export QT_PLUGIN_PATH="${APPDIR}/plugins:${APPDIR}/usr/plugins${QT_PLUGIN_PATH:+
 export QT_QPA_PLATFORM_PLUGIN_PATH="${APPDIR}/plugins/platforms:${APPDIR}/usr/plugins/platforms${QT_QPA_PLATFORM_PLUGIN_PATH:+:${QT_QPA_PLATFORM_PLUGIN_PATH}}"
 
 # Prevent host GIO/GVFS modules from being loaded against AppImage-bundled GLib.
-export GIO_MODULE_DIR=
-export GIO_EXTRA_MODULES=
+export GIO_MODULE_DIR=/nonexistent
+export GIO_EXTRA_MODULES=/nonexistent
 
 SCRITE_BIN="${APPDIR}/bin/Scrite"
 if [[ ! -x "${SCRITE_BIN}" ]]; then
