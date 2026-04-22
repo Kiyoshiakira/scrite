@@ -1,5 +1,5 @@
 name: Build Scrite Linux
-on: 
+on:
   workflow_dispatch: # Allows you to click a button to start the build
 
 jobs:
