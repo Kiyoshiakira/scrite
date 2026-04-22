@@ -6,6 +6,8 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout Code
@@ -41,13 +43,32 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p build/artifacts
-          binary_path="$(find Release build -maxdepth 4 -type f -executable \( -name Scrite -o -name scrite \) | head -n 1 || true)"
-          if [[ -n "${binary_path}" ]]; then
-            cp -v "${binary_path}" build/artifacts/
-          else
+          mapfile -t binaries < <(find Release build -type f -executable \( -name Scrite -o -name scrite \) | sort)
+          if [[ "${#binaries[@]}" -eq 0 ]]; then
             echo "::error::Built binary not found (looked for executable Scrite/scrite under Release/ and build/)."
             ls -la Release || true
             ls -la build || true
+            exit 1
+          fi
+          binary_path=""
+          for candidate in "${binaries[@]}"; do
+            if [[ "${candidate}" == Release/* ]]; then
+              binary_path="${candidate}"
+              break
+            fi
+          done
+          if [[ -z "${binary_path}" ]]; then
+            binary_path="${binaries[0]}"
+          fi
+          if [[ "${#binaries[@]}" -gt 1 ]]; then
+            echo "Found multiple candidate executables:"
+            printf ' - %s\n' "${binaries[@]}"
+            echo "Using: ${binary_path}"
+          fi
+          if [[ -n "${binary_path}" ]]; then
+            cp -v "${binary_path}" build/artifacts/
+          else
+            echo "::error::Unable to determine artifact binary path."
             exit 1
           fi
 
