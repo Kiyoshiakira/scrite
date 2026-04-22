@@ -18,14 +18,15 @@ jobs:
       - name: Resolve Scrite version from qmake project
         run: |
           set -euxo pipefail
-          SCRITE_VERSION="$(awk -F'=' '/^VERSION[[:space:]]*=/{gsub(/[[:space:]]/, "", $2); print $2; exit}' scrite.pro)"
+          SCRITE_VERSION="$(awk -F'=' '/^VERSION[[:space:]]*=/{gsub(/^[\"'\''[:space:]]+|[\"'\''[:space:]]+$/, "", $2); print $2; exit}' scrite.pro)"
           echo "SCRITE_VERSION=${SCRITE_VERSION}" | tee -a "${GITHUB_ENV}"
 
       - name: Install Qt5 and Linux packaging dependencies
         run: |
           set -euxo pipefail
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends software-properties-common ca-certificates wget
+          sudo apt-get install -y --no-install-recommends software-properties-common ca-certificates wget file
+          # README recommends this PPA for libssl1.1, which packaging/linux/package.sh requires on Linux.
           sudo add-apt-repository ppa:nrbrtx/libssl1 -y
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -44,13 +45,18 @@ jobs:
           qmake ../scrite.pro CONFIG+=release
           make -j"$(nproc)"
           SCRITE_BINARY_PATH="${GITHUB_WORKSPACE}/../Release/Scrite"
-          test -x "${SCRITE_BINARY_PATH}"
+          if [[ ! -x "${SCRITE_BINARY_PATH}" ]]; then
+            echo "ERROR: expected build output not found or not executable: ${SCRITE_BINARY_PATH}" >&2
+            exit 1
+          fi
           echo "SCRITE_BINARY_PATH=${SCRITE_BINARY_PATH}" | tee -a "${GITHUB_ENV}"
 
       - name: Download linuxdeployqt helper
         run: |
           set -euxo pipefail
+          # Use linuxdeployqt continuous to match the project's existing Linux packaging flow.
           wget -q -O "${HOME}/linuxdeployqt" "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+          file "${HOME}/linuxdeployqt" | grep -E "ELF|AppImage" || { echo "ERROR: Downloaded linuxdeployqt is not a valid ELF/AppImage binary" >&2; exit 1; }
           chmod +x "${HOME}/linuxdeployqt"
 
       - name: Package AppImage
