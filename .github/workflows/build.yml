@@ -55,11 +55,8 @@ jobs:
             ls -la build || true
             exit 1
           fi
-          if [[ "${#release_binaries[@]}" -gt 0 ]]; then
-            binary_path="${release_binaries[0]}"
-          else
-            binary_path="${binaries[0]}"
-          fi
+          # release_binaries are listed first in `binaries`, so this prefers ../Release output.
+          binary_path="${binaries[0]}"
           if [[ "${#binaries[@]}" -gt 1 ]]; then
             echo "Found multiple candidate executables:"
             printf ' - %s\n' "${binaries[@]}"
