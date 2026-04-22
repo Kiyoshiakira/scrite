@@ -55,15 +55,10 @@ jobs:
             ls -la build || true
             exit 1
           fi
-          binary_path=""
           if [[ "${#release_binaries[@]}" -gt 0 ]]; then
             binary_path="${release_binaries[0]}"
-          elif [[ "${#build_binaries[@]}" -gt 0 ]]; then
-            binary_path="${build_binaries[0]}"
-          fi
-          if [[ -z "${binary_path}" ]]; then
-            echo "::error::Unable to determine artifact binary path."
-            exit 1
+          else
+            binary_path="${binaries[0]}"
           fi
           if [[ "${#binaries[@]}" -gt 1 ]]; then
             echo "Found multiple candidate executables:"
