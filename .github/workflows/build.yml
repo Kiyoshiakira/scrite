@@ -26,50 +26,19 @@ jobs:
             libhunspell-dev libssl-dev imagemagick \
             libibus-1.0-dev
 
-      - name: CI patch: disable Qt PDF module requirement (temporary)
-        shell: bash
+      - name: CI patch: disable Qt PDF module requirement
         run: |
-          set -euxo pipefail
-          python3 - <<'PY'
-import pathlib
-import re
-
-# Remove the token 'pdf' from any "QT +=" lines in *.pro/*.pri.
-# This modifies the CI workspace only; it does not commit anything back.
-
-files = []
-for pat in ("*.pro", "*.pri"):
-    files.extend(pathlib.Path(".").rglob(pat))
-
-qt_re = re.compile(r"^\s*QT\s*\+=\s*(.*)$")
-
-for p in files:
-    lines = p.read_text(encoding="utf-8", errors="ignore").splitlines(True)
-    changed = False
-    out = []
-    for line in lines:
-        if line.lstrip().startswith("#"):
-            out.append(line)
-            continue
-
-        m = qt_re.match(line)
-        if m and "pdf" in line:
-            before, modules = line.split("+=", 1)
-            tokens = modules.strip().split()
-            tokens = [t for t in tokens if t != "pdf"]
-            out.append(before + "+= " + " ".join(tokens) + "\n")
-            changed = True
-        else:
-            out.append(line)
-
-    if changed:
-        p.write_text("".join(out), encoding="utf-8")
-        print(f"Patched: {p}")
-          PY
+          # Finds all .pro and .pri files and removes the 'pdf' module from QT lines
+          # This handles 'QT += pdf', 'QT += core gui pdf', etc.
+          find . -type f \( -name "*.pro" -o -name "*.pri" \) -exec sed -i -E 's/^([[:space:]]*QT[[:space:]]*\+?=[[:space:]]*)((.*)[[:space:]])?pdf([[:space:]]|$)/\1\3 /g' {} +
+          # Clean up any trailing whitespace or empty assignments
+          find . -type f \( -name "*.pro" -o -name "*.pri" \) -exec sed -i 's/[[:space:]]*$//' {} +
 
       - name: Configure and Build
         run: |
           set -euxo pipefail
+          # Create build directory outside of source if preferred, 
+          # but here we follow your structure
           mkdir -p build
           cd build
           qmake ../scrite.pro
