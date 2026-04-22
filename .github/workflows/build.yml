@@ -11,27 +11,24 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Qt and Build Essentials
+      - name: Install Qt6 and Build Essentials
         run: |
           set -euxo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential pkg-config \
-            qt5-qmake qtbase5-dev qtbase5-dev-tools qtdeclarative5-dev \
-            qtquickcontrols2-5-dev \
-            qtmultimedia5-dev \
-            libqt5svg5-dev \
-            libqt5charts5-dev \
-            qtwebengine5-dev \
+            qt6-base-dev qt6-base-dev-tools qt6-declarative-dev \
+            qt6-tools-dev qt6-tools-dev-tools \
+            qt6-multimedia-dev qt6-svg-dev qt6-charts-dev qt6-webengine-dev qt6-pdf-dev \
             libhunspell-dev libssl-dev imagemagick \
             libibus-1.0-dev
 
-      - name: Configure and Build
+      - name: Configure and Build (Qt6)
         run: |
           set -euxo pipefail
           mkdir -p build
           cd build
-          qmake ../scrite.pro
+          qmake6 ../scrite.pro
           make -j"$(nproc)"
 
       - name: Upload Scrite Binary
