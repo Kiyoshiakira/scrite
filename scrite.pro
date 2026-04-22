@@ -1,4 +1,6 @@
-QT += gui qml quick widgets xml concurrent network quickcontrols2 multimedia printsupport svg charts pdf webengine webenginewidgets
+QT += gui qml quick widgets xml concurrent network quickcontrols2 multimedia printsupport svg charts webengine webenginewidgets
+qtHaveModule(pdf): QT += pdf
+!qtHaveModule(pdf): message("Qt PDF module not available; building without Qt PDF module support.")
 CONFIG += qtquickcompiler
 DESTDIR = $$PWD/../Release/
 TARGET = Scrite
@@ -422,4 +424,3 @@ win32 {
 } else {
     QMAKE_POST_LINK = '/bin/bash -c "touch $$PWD/src/core/application_build_timestamp.cpp"'
 }
-
