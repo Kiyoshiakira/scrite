@@ -40,33 +40,77 @@ jobs:
           make -j"$(nproc)"
 
       - name: Prepare Scrite Artifact
+        shell: bash
         run: |
           set -euxo pipefail
+
           cd "${GITHUB_WORKSPACE}"
           mkdir -p build/artifacts
-          # Scrite currently sets DESTDIR to ../Release in scrite.pro; keep a build/ fallback
-          # so artifact upload still works if target output layout changes across qmake/Qt versions.
-          mapfile -t release_binaries < <(find "${GITHUB_WORKSPACE}/../Release" -type f -executable \( -name Scrite -o -name scrite \) 2>/dev/null | sort)
-          mapfile -t build_binaries < <(find "${GITHUB_WORKSPACE}/build" -type f -executable \( -name Scrite -o -name scrite \) 2>/dev/null | sort)
-          binaries=("${release_binaries[@]}" "${build_binaries[@]}")
-          if [[ "${#binaries[@]}" -eq 0 ]]; then
-            echo "::error::Built binary not found (looked for executable Scrite/scrite under Release/ and build/)."
-            ls -la ../Release || true
-            ls -la build || true
+
+          echo "== qmake build dir contents =="
+          ls -la build || true
+
+          echo "== parent dir contents (in case DESTDIR points outside repo) =="
+          ls -la .. || true
+
+          # Collect candidate executables from common output locations.
+          # - Some qmake projects set DESTDIR to ../Release or similar.
+          # - Sometimes the binary ends up under build/ or a platform subdir.
+          mapfile -t candidates < <(
+            find .. "${GITHUB_WORKSPACE}/build" "${GITHUB_WORKSPACE}" \
+              -maxdepth 6 \
+              -type f -executable \
+              \( -iname "scrite" -o -iname "Scrite" -o -iname "scrite*" -o -iname "Scrite*" \) \
+              2>/dev/null | sort -u
+          )
+
+          # If nothing matched by name, fall back to "any executable in likely output dirs"
+          # (still limited to avoid grabbing random tool binaries).
+          if [[ "${#candidates[@]}" -eq 0 ]]; then
+            mapfile -t candidates < <(
+              find "${GITHUB_WORKSPACE}/build" .. -maxdepth 4 -type f -executable 2>/dev/null | sort -u
+            )
+          fi
+
+          if [[ "${#candidates[@]}" -eq 0 ]]; then
+            echo "::error::No executable candidates found."
+            echo "== tree of build (first 200 files) =="
+            find build -maxdepth 4 -type f -print | head -n 200 || true
+            echo "== tree of ../Release (if exists) =="
+            if [[ -d ../Release ]]; then
+              find ../Release -maxdepth 4 -type f -print | head -n 200 || true
+            else
+              echo "../Release does not exist"
+            fi
             exit 1
           fi
-          # release_binaries are listed first in `binaries`, so this prefers ../Release output.
-          binary_path="${binaries[0]}"
-          if [[ "${#binaries[@]}" -gt 1 ]]; then
-            echo "Found multiple candidate executables:"
-            printf ' - %s\n' "${binaries[@]}"
-            echo "Using: ${binary_path}"
+
+          echo "Found executable candidates:"
+          printf ' - %s\n' "${candidates[@]}"
+
+          # Prefer something literally named scrite/Scrite if present
+          binary_path=""
+          for p in "${candidates[@]}"; do
+            base="$(basename "$p")"
+            if [[ "$base" == "scrite" || "$base" == "Scrite" ]]; then
+              binary_path="$p"
+              break
+            fi
+          done
+          # Otherwise pick the first candidate.
+          if [[ -z "$binary_path" ]]; then
+            binary_path="${candidates[0]}"
           fi
+
+          echo "Using binary: ${binary_path}"
           cp -v "${binary_path}" build/artifacts/
 
-      - name: Upload Scrite Binary
+          echo "== artifacts dir =="
+          ls -la build/artifacts
+
+      - name: Upload Scrite Artifact
         uses: actions/upload-artifact@v4
         with:
           name: scrite-ubuntu-app
-          path: build/artifacts/
+          path: build/artifacts/**
           if-no-files-found: error
