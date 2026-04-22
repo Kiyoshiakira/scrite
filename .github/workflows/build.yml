@@ -5,7 +5,9 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-24.04
+    # Existing Linux packaging script and linuxdeployqt flow are Qt5-based.
+    # Ubuntu 22.04 keeps this packaging path stable for AppImage generation.
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
 
@@ -13,51 +15,60 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Qt6 and Build Essentials
+      - name: Resolve Scrite version from qmake project
+        run: |
+          set -euxo pipefail
+          SCRITE_VERSION="$(awk -F'=' '/^VERSION[[:space:]]*=/{gsub(/[[:space:]]/, "", $2); print $2; exit}' scrite.pro)"
+          echo "SCRITE_VERSION=${SCRITE_VERSION}" | tee -a "${GITHUB_ENV}"
+
+      - name: Install Qt5 and Linux packaging dependencies
         run: |
           set -euxo pipefail
           sudo apt-get update
+          sudo apt-get install -y --no-install-recommends software-properties-common ca-certificates wget
+          sudo add-apt-repository ppa:nrbrtx/libssl1 -y
+          sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential pkg-config \
-            qt6-base-dev qt6-base-dev-tools qt6-declarative-dev \
-            qt6-tools-dev qt6-tools-dev-tools \
-            qt6-multimedia-dev \
-            qt6-svg-dev \
-            qt6-charts-dev \
-            qt6-webengine-dev \
-            qt6-pdf-dev \
-            libhunspell-dev libssl-dev imagemagick \
-            libibus-1.0-dev
+            qt5-qmake qtbase5-dev qtbase5-dev-tools qtdeclarative5-dev \
+            qtquickcontrols2-5-dev qttools5-dev qttools5-dev-tools \
+            qtmultimedia5-dev libqt5svg5-dev libqt5charts5-dev qtwebengine5-dev \
+            libhunspell-dev libibus-1.0-dev ibus ibus-m17n imagemagick \
+            libssl1.1
 
-      - name: Configure and Build
+      - name: Configure and build in shadow directory (qmake Qt5)
         run: |
           set -euxo pipefail
           mkdir -p build
           cd build
-          qmake6 ../scrite.pro
+          qmake ../scrite.pro CONFIG+=release
           make -j"$(nproc)"
+          test -x "${GITHUB_WORKSPACE}/../Release/Scrite"
 
-      - name: Show output locations (sanity check)
+      - name: Download linuxdeployqt helper
         run: |
           set -euxo pipefail
-          echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
-          echo "== build dir =="
-          ls -la "${GITHUB_WORKSPACE}/build" || true
-          echo "== ../Release dir (expected Scrite output) =="
-          ls -la "${GITHUB_WORKSPACE}/../Release" || true
-          echo "== find Scrite executable near workspace =="
-          find "${GITHUB_WORKSPACE}/.." -maxdepth 3 -type f -executable \( -name Scrite -o -name scrite \) -print || true
+          wget -q -O "${HOME}/linuxdeployqt" "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+          chmod +x "${HOME}/linuxdeployqt"
 
-      - name: Prepare artifact folder
+      - name: Package AppImage
         run: |
           set -euxo pipefail
-          mkdir -p build/artifacts
-          test -f "${GITHUB_WORKSPACE}/../Release/Scrite"
-          cp -v "${GITHUB_WORKSPACE}/../Release/Scrite" build/artifacts/
+          export VERSION="${SCRITE_VERSION}"
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          cd packaging/linux
+          chmod +x ./package.sh
+          ./package.sh
 
-      - name: Upload Scrite Binary
+      - name: Show generated AppImage location
+        run: |
+          set -euxo pipefail
+          ls -la "${GITHUB_WORKSPACE}/packaging/linux"
+          find "${GITHUB_WORKSPACE}/packaging/linux" -maxdepth 1 -type f -name "*.AppImage" -print
+
+      - name: Upload Scrite AppImage
         uses: actions/upload-artifact@v4
         with:
-          name: scrite-ubuntu-app
-          path: build/artifacts/Scrite
+          name: "scrite-${{ env.SCRITE_VERSION }}-linux-appimage"
+          path: packaging/linux/*.AppImage
           if-no-files-found: error
