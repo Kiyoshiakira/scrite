@@ -36,6 +36,7 @@ jobs:
                 s/(^|\s)pdf(?=\s|$)/ /g;
                 s/[ \t]+/ /g;
                 s/[ \t]+$//;
+                $_ = "" if /^\s*QT\s*\+?=\s*$/;
               }
             ' "$file"
           done < <(find . -type f \( -name "*.pro" -o -name "*.pri" \) -print0)
