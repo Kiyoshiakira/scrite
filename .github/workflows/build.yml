@@ -27,16 +27,41 @@ jobs:
             libibus-1.0-dev
 
       - name: CI patch: disable Qt PDF module requirement (temporary)
+        shell: bash
         run: |
           set -euxo pipefail
-          # This removes 'pdf' token from any "QT +=" line so qmake can proceed on Ubuntu 22.04 Qt5.
-          # It edits files in the CI workspace only (does not push commits).
-          grep -RIn --include="*.pro" --include="*.pri" "QT[[:space:]]*\\+=[[:space:]].*pdf" . || true
-          find . -type f \( -name "*.pro" -o -name "*.pri" \) -print0 | xargs -0 sed -i -E \
-            's/(QT[[:space:]]*\\+=[[:space:]]*[^#\\n]*)\\bpdf\\b/\\1/g'
-          # Cleanup accidental double spaces
-          find . -type f \( -name "*.pro" -o -name "*.pri" \) -print0 | xargs -0 sed -i -E 's/[[:space:]]{2,}/ /g'
-          grep -RIn --include="*.pro" --include="*.pri" "QT[[:space:]]*\\+=[[:space:]].*pdf" . || true
+          python3 - <<'PY'
+          import pathlib, re
+
+          # Remove the token 'pdf' from any "QT +=" lines in *.pro/*.pri.
+          # This modifies the CI workspace only; it does not commit anything back.
+          patterns = ["*.pro", "*.pri"]
+          files = []
+          for pat in patterns:
+            files += list(pathlib.Path(".").rglob(pat))
+
+          qt_re = re.compile(r"^\s*QT\s*\+=\s*(.*)$")
+
+          for p in files:
+            txt = p.read_text(encoding="utf-8", errors="ignore").splitlines(True)
+            changed = False
+            out = []
+            for line in txt:
+              m = qt_re.match(line)
+              if m and "pdf" in line and not line.lstrip().startswith("#"):
+                # Tokenize modules portion, drop 'pdf'
+                before, modules = line.split("+=", 1)
+                tokens = modules.strip().split()
+                tokens = [t for t in tokens if t != "pdf"]
+                newline = before + "+= " + " ".join(tokens) + "\n"
+                out.append(newline)
+                changed = True
+              else:
+                out.append(line)
+            if changed:
+              p.write_text("".join(out), encoding="utf-8")
+              print(f"Patched: {p}")
+          PY
 
       - name: Configure and Build
         run: |
