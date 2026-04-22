@@ -73,6 +73,15 @@ jobs:
         run: |
           set -euxo pipefail
           ls -la "${GITHUB_WORKSPACE}/packaging/linux"
+          APPDIR_PATH="${GITHUB_WORKSPACE}/packaging/linux/Scrite-${SCRITE_VERSION}.AppDir"
+          test -d "${APPDIR_PATH}"
+          ls -la "${APPDIR_PATH}"
+          ls -l "${APPDIR_PATH}/AppRun"
+          test ! -L "${APPDIR_PATH}/AppRun"
+          test -d "${APPDIR_PATH}/qml"
+          test -d "${APPDIR_PATH}/qml/QtQuick/Layouts"
+          test -d "${APPDIR_PATH}/qml/QtQuick/Controls.2"
+          find "${APPDIR_PATH}/qml" -maxdepth 3 -type d | sort
           find "${GITHUB_WORKSPACE}/packaging/linux" -maxdepth 1 -type f -name "*.AppImage" -print
 
       - name: Upload Scrite AppImage
