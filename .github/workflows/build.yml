@@ -46,8 +46,8 @@ jobs:
           mkdir -p build/artifacts
           # Scrite currently sets DESTDIR to ../Release in scrite.pro; keep a build/ fallback
           # so artifact upload still works if target output layout changes across qmake/Qt versions.
-          mapfile -t release_binaries < <(find ../Release -type f -executable \( -name Scrite -o -name scrite \) 2>/dev/null | sort)
-          mapfile -t build_binaries < <(find build -type f -executable \( -name Scrite -o -name scrite \) 2>/dev/null | sort)
+          mapfile -t release_binaries < <(find "${GITHUB_WORKSPACE}/../Release" -type f -executable \( -name Scrite -o -name scrite \) 2>/dev/null | sort)
+          mapfile -t build_binaries < <(find "${GITHUB_WORKSPACE}/build" -type f -executable \( -name Scrite -o -name scrite \) 2>/dev/null | sort)
           binaries=("${release_binaries[@]}" "${build_binaries[@]}")
           if [[ "${#binaries[@]}" -eq 0 ]]; then
             echo "::error::Built binary not found (looked for executable Scrite/scrite under Release/ and build/)."
@@ -55,10 +55,15 @@ jobs:
             ls -la build || true
             exit 1
           fi
+          binary_path=""
           if [[ "${#release_binaries[@]}" -gt 0 ]]; then
             binary_path="${release_binaries[0]}"
           elif [[ "${#build_binaries[@]}" -gt 0 ]]; then
             binary_path="${build_binaries[0]}"
+          fi
+          if [[ -z "${binary_path}" ]]; then
+            echo "::error::Unable to determine artifact binary path."
+            exit 1
           fi
           if [[ "${#binaries[@]}" -gt 1 ]]; then
             echo "Found multiple candidate executables:"
