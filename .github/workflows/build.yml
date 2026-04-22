@@ -1,0 +1,28 @@
+name: Build Scrite Linux
+on: 
+  workflow_dispatch: # Allows you to click a button to start the build
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Qt and Build Essentials
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential qtbase5-dev qtdeclarative5-dev \
+          qt5-qmake qtbase5-dev-tools libhunspell-dev libssl-dev imagemagick
+
+      - name: Configure and Build
+        run: |
+          mkdir build && cd build
+          qmake ../scrite.pro
+          make -j$(nproc)
+
+      - name: Upload Scrite Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrite-ubuntu-app
+          path: build/scrite
