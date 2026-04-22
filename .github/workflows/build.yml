@@ -5,61 +5,49 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Qt5 and Build Essentials
+      - name: Install Qt6 and Build Essentials
         run: |
           set -euxo pipefail
           sudo apt-get update
+          # Ubuntu 24.04 provides Qt6 development packages for modules required by scrite.pro,
+          # including Qt PDF which is not consistently available as a Qt5 dev module on 22.04.
           sudo apt-get install -y --no-install-recommends \
             build-essential pkg-config \
-            qt5-qmake qtbase5-dev qtbase5-dev-tools qtdeclarative5-dev \
-            qtquickcontrols2-5-dev \
-            qtmultimedia5-dev \
-            libqt5svg5-dev \
-            libqt5charts5-dev \
-            qtwebengine5-dev \
+            qt6-base-dev qt6-base-dev-tools qt6-declarative-dev \
+            qt6-tools-dev qt6-tools-dev-tools \
+            qt6-multimedia-dev \
+            qt6-svg-dev \
+            qt6-charts-dev \
+            qt6-webengine-dev \
+            qt6-pdf-dev \
             libhunspell-dev libssl-dev imagemagick \
             libibus-1.0-dev
-
-      - name: CI patch disable Qt PDF module
-        shell: bash
-        run: |
-          set -euo pipefail
-          while IFS= read -r -d '' file; do
-            perl -i -pe '
-              if (/^\s*QT\s*\+?=/) {
-                s/(^|\s)pdf(?=\s|$)/ /g;
-                s/[ \t]+/ /g;
-                s/[ \t]+$//;
-                $_ = "" if /^\s*QT\s*\+?=\s*$/;
-              }
-            ' "$file"
-          done < <(find . -type f \( -name "*.pro" -o -name "*.pri" \) -print0)
 
       - name: Configure and Build
         run: |
           set -euxo pipefail
           mkdir -p build
           cd build
-          qmake ../scrite.pro
+          qmake6 ../scrite.pro
           make -j"$(nproc)"
 
       - name: Prepare Scrite Artifact
         run: |
           set -euxo pipefail
           mkdir -p build/artifacts
-          if [[ -f ../Release/Scrite ]]; then
-            cp -v ../Release/Scrite build/artifacts/
-          elif [[ -f ../Release/scrite ]]; then
-            cp -v ../Release/scrite build/artifacts/
+          binary_path="$(find Release build -maxdepth 4 -type f -executable \( -name Scrite -o -name scrite \) | head -n 1 || true)"
+          if [[ -n "${binary_path}" ]]; then
+            cp -v "${binary_path}" build/artifacts/
           else
-            echo "::error::Built binary not found (expected ../Release/Scrite)."
-            ls -la ../Release || true
+            echo "::error::Built binary not found (looked for executable Scrite/scrite under Release/ and build/)."
+            ls -la Release || true
+            ls -la build || true
             exit 1
           fi
 
