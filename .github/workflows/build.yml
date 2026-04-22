@@ -26,19 +26,12 @@ jobs:
             libhunspell-dev libssl-dev imagemagick \
             libibus-1.0-dev
 
-      - name: CI patch: disable Qt PDF module requirement
-        run: |
-          # Finds all .pro and .pri files and removes the 'pdf' module from QT lines
-          # This handles 'QT += pdf', 'QT += core gui pdf', etc.
-          find . -type f \( -name "*.pro" -o -name "*.pri" \) -exec sed -i -E 's/^([[:space:]]*QT[[:space:]]*\+?=[[:space:]]*)((.*)[[:space:]])?pdf([[:space:]]|$)/\1\3 /g' {} +
-          # Clean up any trailing whitespace or empty assignments
-          find . -type f \( -name "*.pro" -o -name "*.pri" \) -exec sed -i 's/[[:space:]]*$//' {} +
+      - name: CI patch disable Qt PDF module
+        run: find . -type f \( -name "*.pro" -o -name "*.pri" \) -exec sed -i -E 's/^([[:space:]]*QT[[:space:]]*\+?=[[:space:]]*)((.*)[[:space:]])?pdf([[:space:]]|$)/\1\3 /g' {} +
 
       - name: Configure and Build
         run: |
           set -euxo pipefail
-          # Create build directory outside of source if preferred, 
-          # but here we follow your structure
           mkdir -p build
           cd build
           qmake ../scrite.pro
