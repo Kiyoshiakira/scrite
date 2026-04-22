@@ -27,7 +27,18 @@ jobs:
             libibus-1.0-dev
 
       - name: CI patch disable Qt PDF module
-        run: find . -type f \( -name "*.pro" -o -name "*.pri" \) -exec sed -i -E 's/^([[:space:]]*QT[[:space:]]*\+?=[[:space:]]*)((.*)[[:space:]])?pdf([[:space:]]|$)/\1\3 /g' {} +
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            perl -i -pe '
+              if (/^\s*QT\s*\+?=/) {
+                s/(^|\s)pdf(?=\s|$)/ /g;
+                s/[ \t]+/ /g;
+                s/[ \t]+$//;
+              }
+            ' "$file"
+          done < <(find . -type f \( -name "*.pro" -o -name "*.pri" \) -print0)
 
       - name: Configure and Build
         run: |
