@@ -5,34 +5,45 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Qt6 and Build Essentials
+      - name: Install Qt5 and Build Essentials
         run: |
           set -euxo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential pkg-config \
-            qt6-base-dev qt6-base-dev-tools qt6-declarative-dev \
-            qt6-tools-dev qt6-tools-dev-tools \
-            libqt6multimedia6-dev \
-            libqt6svg6-dev \
-            libqt6charts6-dev \
-            qt6-webengine-dev \
-            qt6-pdf-dev \
+            qt5-qmake qtbase5-dev qtbase5-dev-tools qtdeclarative5-dev \
+            qtquickcontrols2-5-dev \
+            qtmultimedia5-dev \
+            libqt5svg5-dev \
+            libqt5charts5-dev \
+            qtwebengine5-dev \
             libhunspell-dev libssl-dev imagemagick \
             libibus-1.0-dev
 
-      - name: Configure and Build (Qt6)
+      - name: CI patch: disable Qt PDF module requirement (temporary)
+        run: |
+          set -euxo pipefail
+          # This removes 'pdf' token from any "QT +=" line so qmake can proceed on Ubuntu 22.04 Qt5.
+          # It edits files in the CI workspace only (does not push commits).
+          grep -RIn --include="*.pro" --include="*.pri" "QT[[:space:]]*\\+=[[:space:]].*pdf" . || true
+          find . -type f \( -name "*.pro" -o -name "*.pri" \) -print0 | xargs -0 sed -i -E \
+            's/(QT[[:space:]]*\\+=[[:space:]]*[^#\\n]*)\\bpdf\\b/\\1/g'
+          # Cleanup accidental double spaces
+          find . -type f \( -name "*.pro" -o -name "*.pri" \) -print0 | xargs -0 sed -i -E 's/[[:space:]]{2,}/ /g'
+          grep -RIn --include="*.pro" --include="*.pri" "QT[[:space:]]*\\+=[[:space:]].*pdf" . || true
+
+      - name: Configure and Build
         run: |
           set -euxo pipefail
           mkdir -p build
           cd build
-          qmake6 ../scrite.pro
+          qmake ../scrite.pro
           make -j"$(nproc)"
 
       - name: Upload Scrite Binary
