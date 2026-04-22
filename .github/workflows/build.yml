@@ -10,6 +10,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Qt and Build Essentials
+            - name: Verify ibus dev package
+        run: |
+          dpkg -l | grep -E 'libibus|ibus' || true
+          pkg-config --modversion ibus-1.0 || (echo "pkg-config can't find ibus-1.0" && exit 1)
+          pkg-config --cflags --libs ibus-1.0
         run: |
           sudo apt-get update
           sudo apt-get install -y \
