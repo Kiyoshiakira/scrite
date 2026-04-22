@@ -23,16 +23,8 @@ jobs:
             libqt5svg5-dev \
             libqt5charts5-dev \
             qtwebengine5-dev \
-            libqt5pdf5-dev \
             libhunspell-dev libssl-dev imagemagick \
             libibus-1.0-dev
-
-      - name: Verify ibus dev package
-        run: |
-          set -euxo pipefail
-          dpkg -l | grep -E 'libibus|ibus' || true
-          pkg-config --modversion ibus-1.0
-          pkg-config --cflags --libs ibus-1.0
 
       - name: Configure and Build
         run: |
