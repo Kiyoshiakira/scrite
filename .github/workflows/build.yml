@@ -12,8 +12,12 @@ jobs:
       - name: Install Qt and Build Essentials
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential qtbase5-dev qtdeclarative5-dev \
-          qt5-qmake qtbase5-dev-tools libhunspell-dev libssl-dev imagemagick
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            qtbase5-dev qtdeclarative5-dev \
+            qt5-qmake qtbase5-dev-tools \
+            libhunspell-dev libssl-dev imagemagick \
+            libibus-1.0-dev
 
       - name: Configure and Build
         run: |
