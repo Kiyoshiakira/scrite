@@ -72,14 +72,33 @@ _copy_ssl_libs() {
 }
 _copy_ssl_libs "${LIB_DIR}"
 
+# Copy helper libraries. Some distros only ship versioned .so.N files and no bare
+# .so symlink, so try the bare name first and fall back to any versioned variant.
+_copy_lib() {
+    local lib_name="${1}"
+    local bare="${LIB_DIR}/${lib_name}"
+    if [[ -f "${bare}" ]]; then
+        cp -L "${bare}" "${APPDIR_PATH}/lib/"
+    else
+        # Find the first versioned file matching the pattern (e.g. libibus-1.0.so.5)
+        local versioned
+        versioned="$(find "${LIB_DIR}" -maxdepth 1 -name "${lib_name}.*" | sort | head -1)"
+        if [[ -n "${versioned}" ]]; then
+            cp -L "${versioned}" "${APPDIR_PATH}/lib/"
+        else
+            echo "WARNING: ${lib_name} not found in ${LIB_DIR}; skipping." >&2
+        fi
+    fi
+}
 for lib in \
     libibus-1.0.so \
     libgio-2.0.so \
     libgobject-2.0.so \
     libglib-2.0.so; do
-    cp -L "${LIB_DIR}/${lib}" "${APPDIR_PATH}/lib"
+    _copy_lib "${lib}"
 done
-chmod a-x "${APPDIR_PATH}"/lib/*.so*
+# Remove execute bits from bundled libraries (tolerate the glob matching nothing).
+find "${APPDIR_PATH}/lib" -name '*.so*' -exec chmod a-x {} +
 cp -a "${REPO_ROOT}/qml/." "${APPDIR_PATH}/qml/"
 
 mkdir -p "${APPDIR_PATH}/share/applications"
