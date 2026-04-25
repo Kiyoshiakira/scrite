@@ -401,7 +401,7 @@ DISTFILES += \
     3rdparty/openssl/license.txt \
     3rdparty/poly2tri/License.txt \
     Info.plist \
-    README \
+    README.md \
     packaging/linux/Scrite.desktop \
     packaging/linux/package.sh \
     packaging/mac/dmg_settings_tmpl.py \
@@ -414,8 +414,8 @@ DISTFILES += \
     packaging/windows/package-x64.bat \
     packaging/windows/package-x86.bat \
     packaging/windows/qt.conf \
-    tools/urlattribs/OpenGraph.php
-    tools/urlattribs/urlattribs.php \
+    tools/urlattribs/OpenGraph.php \
+    tools/urlattribs/urlattribs.php
 
 # The following lines ensure that timestamp of application_build_timestamp.cpp is
 # modified to current time stamp before every build. This ensures that build
