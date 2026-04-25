@@ -52,9 +52,27 @@ rm -rf "${APPDIR_PATH}"
 mkdir -p "${APPDIR_PATH}/bin" "${APPDIR_PATH}/lib" "${APPDIR_PATH}/qml"
 
 cp "${SCRITE_BINARY_PATH}" "${APPDIR_PATH}/bin/"
+
+# Bundle SSL libraries.  Ubuntu 22.04 ships OpenSSL 1.1; Ubuntu 24.04+ ships
+# OpenSSL 3.x.  Detect which flavour is installed and bundle accordingly.
+_copy_ssl_libs() {
+    local lib_dir="${1}"
+    # Prefer OpenSSL 3.x (Ubuntu 24.04+, Debian 12+) but fall back to 1.1.
+    if [[ -f "${lib_dir}/libssl.so.3" ]]; then
+        cp -L "${lib_dir}/libssl.so.3"    "${APPDIR_PATH}/lib/"
+        cp -L "${lib_dir}/libcrypto.so.3" "${APPDIR_PATH}/lib/"
+        echo "Bundled OpenSSL 3.x from ${lib_dir}"
+    elif [[ -f "${lib_dir}/libssl.so.1.1" ]]; then
+        cp -L "${lib_dir}/libssl.so.1.1"    "${APPDIR_PATH}/lib/"
+        cp -L "${lib_dir}/libcrypto.so.1.1" "${APPDIR_PATH}/lib/"
+        echo "Bundled OpenSSL 1.1 from ${lib_dir}"
+    else
+        echo "WARNING: No suitable libssl found in ${lib_dir}; SSL may not work." >&2
+    fi
+}
+_copy_ssl_libs "${LIB_DIR}"
+
 for lib in \
-    libssl.so.1.1 \
-    libcrypto.so.1.1 \
     libibus-1.0.so \
     libgio-2.0.so \
     libgobject-2.0.so \

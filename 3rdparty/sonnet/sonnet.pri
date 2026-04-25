@@ -60,7 +60,7 @@ LIBS    += Ole32.lib
 DEFINES += SONNET_AVOID_HUNSPELL_CLIENT # We use ISpellChecker from Windows SDK
 }
 
-linux-g++ {
+linux-g++|linux-clang {
 HEADERS +=  $$PWD/hunspelldebug.h \
             $$PWD/config-hunspell.h \
             $$PWD/sonnet/src/plugins/hunspell/hunspellclient.h \
