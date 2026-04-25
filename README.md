@@ -16,10 +16,45 @@ built-in cloud syncing. You can find more information on our [official website](
 A complete user guide can be found [here](https://www.scrite.io/docs/userguide).
 
 ## Building from source
-Scrite is developed using Qt 5.15.19. To build scrite, simply install
-this version of Qt on your computer (Windows, macOS or Linux).
+Scrite is developed against Qt 5.15.x. Open `scrite.pro` in Qt Creator and build,
+or use the command line steps below.
 
-Open `scrite.pro` in Qt Creator and build.
+### Ubuntu 24.04 / 25.10 (and later)
+
+Install the required dependencies:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+    build-essential pkg-config \
+    qt5-qmake qtbase5-dev qtbase5-dev-tools qtdeclarative5-dev \
+    qtquickcontrols2-5-dev qttools5-dev qttools5-dev-tools \
+    qtmultimedia5-dev libqt5svg5-dev libqt5charts5-dev qtwebengine5-dev \
+    libhunspell-dev libibus-1.0-dev ibus imagemagick libssl-dev
+```
+
+Configure and build in a shadow directory:
+
+```bash
+mkdir build && cd build
+qmake ../scrite.pro CONFIG+=release
+make -j"$(nproc)"
+```
+
+The resulting binary is placed in `../Release/Scrite` relative to the repository root.
+
+### Notes
+- GCC 14+ and Clang 17+ are both supported; the `linux-g++` and `linux-clang`
+  qmake specs are both handled by the `.pri` files.
+- OpenSSL 3.x (the default on Ubuntu 24.04+) is used automatically; there is no
+  need to install the legacy `libssl1.1` package.
+- The `use_gold_linker` option has been removed; the default linker in
+  binutils ≥ 2.40 is fast enough and avoids the deprecation warnings.
+
+### macOS / Windows
+
+Install the matching Qt 5.15.x from [qt.io](https://www.qt.io/download) and
+open `scrite.pro` in Qt Creator.
 
 ## Reporting Issues
 If you run into bugs, crashes or find missing features OR features that

@@ -52,7 +52,7 @@ Item {
 
     property var helpTips: undefined
 
-    property bool allowAppUsage: Scrite.user.loggedIn && Scrite.user.info.hasActiveSubscription
+    property bool allowAppUsage: true
     property bool canShowNotebookInStructure: width > minWindowWidthForShowingNotebookInStructure
     property bool currentUseSoftwareRenderer
     property bool loadMainUiContent: true

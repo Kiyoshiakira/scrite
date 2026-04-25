@@ -5,9 +5,9 @@ on:
 
 jobs:
   build-linux:
-    # Existing Linux packaging script and linuxdeployqt flow are Qt5-based.
-    # Ubuntu 22.04 keeps this packaging path stable for AppImage generation.
-    runs-on: ubuntu-22.04
+    # Ubuntu 24.04 ships Qt 5.15.x, GCC 14, binutils 2.42, and OpenSSL 3.x
+    # out of the box, giving us a modern build environment without extra PPAs.
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
 
@@ -25,17 +25,13 @@ jobs:
         run: |
           set -euxo pipefail
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends software-properties-common ca-certificates wget file
-          # README recommends this PPA for libssl1.1, which packaging/linux/package.sh requires on Linux.
-          sudo add-apt-repository ppa:nrbrtx/libssl1 -y
-          sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential pkg-config \
             qt5-qmake qtbase5-dev qtbase5-dev-tools qtdeclarative5-dev \
             qtquickcontrols2-5-dev qttools5-dev qttools5-dev-tools \
             qtmultimedia5-dev libqt5svg5-dev libqt5charts5-dev qtwebengine5-dev \
             libhunspell-dev libibus-1.0-dev ibus ibus-m17n imagemagick \
-            libssl1.1
+            libssl-dev ca-certificates wget file
 
       - name: Configure and build in shadow directory (qmake Qt5)
         run: |

@@ -382,7 +382,9 @@ linux {
     CONFIG += link_pkgconfig
     PKGCONFIG += ibus-1.0
 
-    CONFIG+=use_gold_linker
+    # use_gold_linker is deprecated in binutils ≥ 2.40 / GCC ≥ 14 and is not
+    # available on Ubuntu 24.04+ by default.  The default BFD linker (or lld
+    # when LLVM toolchain is used) is perfectly adequate for a desktop app.
     VERSION_INFO = "2.0.20-linux"
 
     HEADERS += src/core/platformtransliterator_linux.h

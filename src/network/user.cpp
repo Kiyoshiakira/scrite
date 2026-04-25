@@ -798,22 +798,14 @@ AppFeature::~AppFeature() { }
 
 bool AppFeature::isEnabled(int feature)
 {
-    if (User::instance()->isLoggedIn() && User::instance()->info().hasActiveSubscription) {
-        return feature < 0 ? false
-                           : User::instance()->info().isFeatureEnabled(Scrite::AppFeature(feature));
-    }
-
-    return false;
+    Q_UNUSED(feature)
+    return true;
 }
 
 bool AppFeature::isEnabled(const QString &featureName)
 {
-    if (User::instance()->isLoggedIn() && User::instance()->info().hasActiveSubscription) {
-        return featureName.isEmpty() ? false
-                                     : User::instance()->info().isFeatureNameEnabled(featureName);
-    }
-
-    return false;
+    Q_UNUSED(featureName)
+    return true;
 }
 
 void AppFeature::setFeatureName(const QString &val)
@@ -838,16 +830,7 @@ void AppFeature::setFeature(int val)
 
 void AppFeature::reevaluate()
 {
-    if (User::instance()->isLoggedIn() && User::instance()->info().hasActiveSubscription) {
-        const bool flag1 = m_feature < 0
-                ? true
-                : User::instance()->info().isFeatureEnabled(Scrite::AppFeature(m_feature));
-        const bool flag2 = m_featureName.isEmpty()
-                ? true
-                : User::instance()->info().isFeatureNameEnabled(m_featureName);
-        this->setEnabled(flag1 && flag2);
-    } else
-        this->setEnabled(false);
+    this->setEnabled(true);
 }
 
 void AppFeature::setEnabled(bool val)

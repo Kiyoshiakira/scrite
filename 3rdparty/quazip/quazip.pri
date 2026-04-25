@@ -6,6 +6,7 @@ win32 {
     INCLUDEPATH += $$[QT_INSTALL_HEADERS]/QtZlib
 }
 linux-g++: LIBS += -lz
+linux-clang: LIBS += -lz
 
 INCLUDEPATH += $$PWD/quazip
 
