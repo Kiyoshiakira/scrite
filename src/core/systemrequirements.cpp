@@ -238,7 +238,10 @@ bool SystemRequirements::checkAndReport(const QList<Aspect> aspects)
     eventLoop.exec();
 #endif
 
-    const QList<Aspect> mandatoryAspects({ Aspect::CpuCore, Aspect::SupportedScriteVersion });
+    // SupportedScriteVersion is intentionally excluded from mandatory aspects so that a
+    // self-built or community-distributed binary is never hard-blocked by a remote server
+    // version check.  Failing that check results in a dismissible warning instead.
+    const QList<Aspect> mandatoryAspects({ Aspect::CpuCore });
     const QList<Aspect> failedChecks = check(aspectsToCheck, &msgBox);
 
     bool allowWithWarning = [=]() -> bool {

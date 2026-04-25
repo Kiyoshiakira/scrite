@@ -7,6 +7,10 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="${REPO_ROOT}/build"
 RELEASE_DIR="${REPO_ROOT}/../Release"
 
+# Force Qt5 tools even when Qt6 packages are also installed on the system.
+# qtchooser uses QT_SELECT to pick the active Qt version.
+export QT_SELECT=qt5
+
 echo "==> Installing build dependencies (requires sudo)..."
 sudo apt-get update
 sudo apt-get install -y \
