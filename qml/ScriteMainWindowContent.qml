@@ -94,10 +94,6 @@ Item {
 
         readonly property Connections userConnections: Connections {
             target: Scrite.user
-
-            function onRequestVersionTypeAccess() {
-                RequestVersionTypeAccess.launch()
-            }
         }
 
         property bool handleCloseEvent: true
@@ -166,9 +162,6 @@ Item {
 
                 SaveFileTask.save( () => {
                                       _private.handleCloseEvent = false
-                                      if( TrialNotActivatedDialog.launch() !== null)
-                                        return
-
                                       Scrite.window.close()
                                   } )
             } else
